@@ -2,7 +2,7 @@ package net.openbgi.android;
 
 import android.content.res.AssetManager;
 
-import org.nanohttpd.protocols.http.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD;
 
 import java.io.IOException;
 import java.io.InputStream;
