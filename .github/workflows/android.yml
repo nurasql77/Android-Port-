@@ -5,6 +5,10 @@ on:
     branches: [openbgi-android]
   workflow_dispatch:
 
+concurrency:
+  group: openbgi-android-build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
