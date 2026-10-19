@@ -1,0 +1,34 @@
+name: Android APK
+
+on:
+  push:
+    branches: [openbgi-android]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew 2>/dev/null || true
+          if [ ! -f gradlew ]; then
+            curl -fsSL https://services.gradle.org/distributions/gradle-8.10.2-bin.zip -o /tmp/gradle.zip
+            unzip -q /tmp/gradle.zip -d /tmp/gradle
+            /tmp/gradle/gradle-8.10.2/bin/gradle assembleDebug --no-daemon
+          else
+            ./gradlew assembleDebug --no-daemon
+          fi
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: openbgi-android-debug
+          path: app/build/outputs/apk/debug/*.apk
