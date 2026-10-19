@@ -17,6 +17,29 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0 ndk;27.2.12479018 cmake;3.22.1'
+
+      - name: Build OpenBGI WebAssembly engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/Cytlan/openbgi.git openbgi-src
+          git -C openbgi-src checkout --detach 40b144a03e15f159cadc957387e6f94bce8de65f
+
+          git clone https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install 3.1.74
+          "$RUNNER_TEMP/emsdk/emsdk" activate 3.1.74
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+
+          cd openbgi-src
+          # Keep the initial allocation and growth ceiling friendlier to lower-memory phones.
+          sed -i 's/-sINITIAL_MEMORY=268435456/-sINITIAL_MEMORY=134217728/' Makefile
+          sed -i 's/-sMAXIMUM_MEMORY=2147483648/-sMAXIMUM_MEMORY=1073741824/' Makefile
+          make wasm VORBIS=none OPT=-O2
+
+          mkdir -p "$GITHUB_WORKSPACE/app/src/main/assets"
+          cp bin/wasm/openbgi.html bin/wasm/openbgi.js bin/wasm/openbgi.wasm "$GITHUB_WORKSPACE/app/src/main/assets/"
+          cp LICENSE "$GITHUB_WORKSPACE/app/src/main/assets/OPENBGI-COPYING"
+
       - name: Build debug APK
         run: |
           chmod +x gradlew 2>/dev/null || true
@@ -27,6 +50,7 @@ jobs:
           else
             ./gradlew assembleDebug --no-daemon
           fi
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
